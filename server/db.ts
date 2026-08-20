@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { ChatMessage, InsertChatMessage, InsertProject, InsertUser, chatMessages, projects, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +89,47 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+export async function createProject(project: InsertProject) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  const result = await db.insert(projects).values(project);
+  return Number(result[0].insertId);
+}
+
+export async function getProjectsByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(projects).where(eq(projects.userId, userId)).orderBy(desc(projects.updatedAt));
+}
+
+export async function getProjectById(projectId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db.select().from(projects).where(eq(projects.id, projectId)).limit(1);
+  const project = rows[0];
+  return project?.userId === userId ? project : undefined;
+}
+
+export async function updateProject(projectId: number, userId: number, updates: Partial<InsertProject>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  const existing = await getProjectById(projectId, userId);
+  if (!existing) return false;
+  await db.update(projects).set(updates).where(eq(projects.id, projectId));
+  return true;
+}
+
+export async function addChatMessage(message: InsertChatMessage) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  const result = await db.insert(chatMessages).values(message);
+  return Number(result[0].insertId);
+}
+
+export async function getMessagesByProject(projectId: number, userId: number): Promise<ChatMessage[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const project = await getProjectById(projectId, userId);
+  if (!project) return [];
+  return db.select().from(chatMessages).where(eq(chatMessages.projectId, projectId)).orderBy(chatMessages.createdAt);
+}
