@@ -43,6 +43,19 @@ Use [`.env.render.example`](.env.render.example) only as a checklist. Render pro
 | `LLM_*` | Only after LLM adapter migration | Prevents a non-working or exposed chat integration. |
 | `AUTH_*` | Only after choosing auth provider | Prevents redirect/callback mismatches. |
 
+## Team layer after external authentication
+
+The current **ARCH-001 Team Layer** is visible in the Node operations room and can load a shared message template into the production chat. After moving authentication off Manus, map the external provider's authenticated users to these application permissions in the database—never in frontend code or a GitHub file.
+
+| Application permission | Team meaning | Allowed action |
+| --- | --- | --- |
+| `origin_director` | Islam's canonical-direction role | Propose and approve production direction; DNA changes still require a reference workflow. |
+| `human_reviewer` | Mustafa's realism/comedy review role | Add human notes and request revisions; cannot mutate the canonical registry. |
+| `producer` | Production translation role | Create scene/episode packages from approved inputs; cannot alter locks. |
+| `continuity_guard` | Server policy, not a user account | Validates the registry and blocks drift before the production output is finalized. |
+
+See [`ARCH001_TEAM_LAYER.md`](ARCH001_TEAM_LAYER.md) for the exact shared-message format. This separation keeps all three collaborators on one reference layer, while the server—not a chat message—enforces the final guardrails.
+
 ## Recommendation
 
 Start with Render Free **only as a preview** because it supports Node web services and Git-linked deploys.[[1]] For a hobby fallback, Koyeb offers one free web service with 512MB RAM and 0.1 vCPU, but it also scales to zero after an hour and has no persistent volume.[[3]] Keep the Manus URL as the main production-facing location until the external replacements are selected and tested.

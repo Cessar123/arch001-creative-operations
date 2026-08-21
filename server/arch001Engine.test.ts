@@ -16,6 +16,8 @@ describe("ARCH-001 production context", () => {
     expect(prompt).toContain("شمندي [SHEMENDI-FAMILY-003]");
     expect(prompt).toContain("Never blend relatives into one face");
     expect(prompt).toContain("[001-DIR] ST-CAST-3D");
+    expect(prompt).toContain("TEAM LAYER GOVERNANCE");
+    expect(prompt).toContain("مصطفى — مراجع الروح البشرية والكوميديا");
   });
 
   it("keeps visual locks distinct for siblings and pending citizens", () => {
@@ -24,6 +26,13 @@ describe("ARCH-001 production context", () => {
     expect(prompt).toContain("عودي [OUDI-IMPS-005]");
     expect(prompt).toContain("جوجو [JOJO-PENDING]");
     expect(prompt).toContain("status=PENDING");
+  });
+
+  it("keeps team direction separate from the DNA LOCK authority", () => {
+    const prompt = buildArch001SystemPrompt();
+
+    expect(prompt).toContain("retain Islam's direction and Mustafa's human/comedy note as separate inputs");
+    expect(prompt).toContain("never treat either note as permission to change a locked face");
   });
 
   it("selects an available live model and sends the ARCH-001 system context", async () => {

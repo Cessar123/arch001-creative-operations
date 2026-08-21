@@ -1,5 +1,6 @@
 import { archCharacters, archDistricts, ARCH001_SIGNATURE } from "../shared/arch001";
 import { invokeLLM, listLLMModels } from "./_core/llm";
+import { ARCH001_TEAM_LAYER_SIGNATURE, archTeamRoles } from "../shared/arch001Team";
 
 export type ArchChatMessage = {
   role: "user" | "assistant";
@@ -17,6 +18,10 @@ function archiveRoster() {
     `status=${character.status}`,
     `visual=${character.visualLock}`,
   ].join(" | ")).join("\n");
+}
+
+function teamRoster() {
+  return archTeamRoles.map((role) => `${role.member} — ${role.title}: ${role.responsibility} Boundary: ${role.boundary}`).join("\n");
 }
 
 export function buildArch001SystemPrompt() {
@@ -49,6 +54,10 @@ PRODUCTION SKILLS:
 - Produce scene cards, episode cards, dialogue beats, and cinematic camera plans.
 - Build residence/work registry entries and concise QR payload suggestions.
 - Write a five-line video promo prompt and Arabic hook.
+
+TEAM LAYER GOVERNANCE:
+${teamRoster()}
+When a request uses [${ARCH001_TEAM_LAYER_SIGNATURE}], retain Islam's direction and Mustafa's human/comedy note as separate inputs. Translate them into the requested production card, but never treat either note as permission to change a locked face, age, clothing anchor, family, residence, work, district, or official canon. If cast, location, or output type is missing, return PENDING CONFIRMATION with the missing field.
 
 RESPONSE FORMAT:
 Start with a compact status line: STATUS: LOCKED / VARIANT / PENDING CONFIRMATION.

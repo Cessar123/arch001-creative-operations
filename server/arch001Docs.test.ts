@@ -56,4 +56,17 @@ describe("ARCH-001 repository documentation", () => {
     expect(renderBlueprint).toContain("plan: free");
     expect(renderBlueprint).not.toContain("BUILT_IN_FORGE_API_KEY:");
   });
+
+  it("documents the shared ARCH-001 team layer for the Node operations room", () => {
+    const teamLayer = projectFile("ARCH001_TEAM_LAYER.md");
+    const homePage = projectFile("client/src/pages/Home.tsx");
+
+    expect(teamLayer).toContain("طبقة واحدة، أدوار مختلفة");
+    expect(teamLayer).toContain("origin_director");
+    expect(teamLayer).toContain("human_reviewer");
+    expect(homePage).toContain("ARCH001_TEAM_COMMAND");
+    expect(homePage).toContain("طبقة الفريق");
+    expect(projectFile("RENDER_DEPLOYMENT.md")).toContain("Team layer after external authentication");
+    expect(projectFile("RENDER_DEPLOYMENT.md")).toContain("origin_director");
+  });
 });

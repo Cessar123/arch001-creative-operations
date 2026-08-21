@@ -6,6 +6,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { archCharacters, archDistricts, archSkills, ARCH001_MASTER_MAP_URL, ARCH001_SIGNATURE, getArchRegistryPayload } from "../../../shared/arch001";
+import { ARCH001_TEAM_COMMAND, archTeamRoles } from "../../../shared/arch001Team";
 import {
   Aperture,
   Bot,
@@ -19,6 +20,7 @@ import {
   QrCode,
   ShieldCheck,
   Sparkles,
+  UsersRound,
   WandSparkles,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -106,6 +108,7 @@ export default function Home() {
         <aside className="space-y-3 xl:sticky xl:top-25 xl:self-start">
           <div className="mb-4 flex items-center gap-2 text-xs tracking-[.2em] text-[#e9cd7a]"><Cpu className="size-4" /> مهارات الإنتاج</div>
           {archSkills.map((skill) => { const active = selectedSkill === skill.id; return <button key={skill.id} onClick={() => { setSelectedSkill(skill.id); send(`فعّل مهارة ${skill.name} (${skill.code}) واعرض لي أقصر خطوة إنتاجية تالية.`); }} className={`w-full rounded-2xl border p-3 text-right transition ${active ? "border-cyan-300/50 bg-cyan-300/10 shadow-[0_0_20px_rgba(93,232,255,.08)]" : "border-white/10 bg-white/[.025] hover:border-[#e4bd59]/35 hover:bg-[#e4bd59]/5"}`}><p className="text-sm font-bold text-[#f5edce]">{skill.name}</p><p className="mt-1 text-[11px] text-cyan-200/80">{skill.code}</p><p className="mt-2 text-xs leading-5 text-[#9db4bd]">{skill.description}</p></button> })}
+          <Card className="border-cyan-300/25 bg-cyan-300/[.055] p-4"><div className="flex items-center justify-between gap-2 text-cyan-100"><div className="flex items-center gap-2"><UsersRound className="size-4" /><span className="text-sm font-bold">طبقة الفريق</span></div><Badge className="border-cyan-300/25 bg-cyan-300/10 text-[9px] text-cyan-100">ONE REFERENCE</Badge></div><div className="mt-3 space-y-2">{archTeamRoles.slice(0, 3).map((role) => <div key={role.id} className="rounded-lg border border-cyan-300/10 bg-[#07131c]/60 p-2"><p className="text-xs font-bold text-[#f5edce]">{role.member} · {role.title}</p><p className="mt-1 text-[10px] leading-5 text-[#a8bec5]">{role.responsibility}</p></div>)}</div><Button onClick={() => send(ARCH001_TEAM_COMMAND)} disabled={chat.isPending} variant="outline" className="mt-3 w-full border-cyan-300/30 bg-transparent text-cyan-100 hover:bg-cyan-300/10">ابدأ رسالة فريق موحّدة</Button></Card>
           <Card className="border-[#e4bd59]/25 bg-[#e4bd59]/[.06] p-4"><div className="flex items-center gap-2 text-[#e9cd7a]"><ShieldCheck className="size-4" /><span className="text-sm font-bold">حارس الاستمرارية</span></div><p className="mt-2 text-xs leading-6 text-[#c8d5d7]">الشات يوقف انجراف الوجه أو العمر أو الزي أو الدور قبل إخراج المشهد.</p></Card>
         </aside>
 
