@@ -14,6 +14,7 @@ import {
   updateProject,
 } from "./db";
 import { runCreativeArchitecture } from "./creativeEngine";
+import { runArch001Chat } from "./arch001Engine";
 
 const projectIdInput = z.object({ projectId: z.number().int().positive() });
 
@@ -98,6 +99,18 @@ export const appRouter = router({
         });
         return { ...output, currentStage: nextStage, completedStage: project.currentStage };
       }),
+  }),
+  arch001: router({
+    chat: protectedProcedure
+      .input(z.object({
+        messages: z.array(z.object({
+          role: z.enum(["user", "assistant"]),
+          content: z.string().trim().min(1).max(12000),
+        })).min(1).max(12),
+      }))
+      .mutation(async ({ input }) => ({
+        content: await runArch001Chat(input.messages),
+      })),
   }),
   assets: router({
     generateImage: protectedProcedure
