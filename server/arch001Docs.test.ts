@@ -69,4 +69,17 @@ describe("ARCH-001 repository documentation", () => {
     expect(projectFile("RENDER_DEPLOYMENT.md")).toContain("Team layer after external authentication");
     expect(projectFile("RENDER_DEPLOYMENT.md")).toContain("origin_director");
   });
+
+  it("keeps the Cloudflare public preview isolated from Manus-only server features", () => {
+    const cloudflareGuide = projectFile("CLOUDFLARE_PAGES.md");
+    const preview = projectFile("client/src/CloudflarePreview.tsx");
+    const bootstrap = projectFile("client/src/main.tsx");
+    const wrangler = projectFile("wrangler.toml");
+
+    expect(cloudflareGuide).toContain("pnpm run build:cloudflare");
+    expect(cloudflareGuide).toContain("does **not** call `/api/trpc`");
+    expect(preview).not.toContain("trpc.");
+    expect(bootstrap).toContain("VITE_DEPLOYMENT_TARGET === \"cloudflare-pages\"");
+    expect(wrangler).toContain('pages_build_output_dir = "./dist/public"');
+  });
 });

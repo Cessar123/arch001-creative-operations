@@ -5,9 +5,11 @@ import { httpBatchLink, TRPCClientError } from "@trpc/client";
 import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
+import CloudflarePreview from "./CloudflarePreview";
 import { startLogin } from "./const";
 import "./index.css";
 
+const isCloudflarePreview = import.meta.env.VITE_DEPLOYMENT_TARGET === "cloudflare-pages";
 const queryClient = new QueryClient();
 
 const redirectToLoginIfUnauthorized = (error: unknown) => {
@@ -72,10 +74,16 @@ const trpcClient = trpc.createClient({
   ],
 });
 
-createRoot(document.getElementById("root")!).render(
-  <trpc.Provider client={trpcClient} queryClient={queryClient}>
-    <QueryClientProvider client={queryClient}>
-      <App />
-    </QueryClientProvider>
-  </trpc.Provider>
-);
+const root = createRoot(document.getElementById("root")!);
+
+if (isCloudflarePreview) {
+  root.render(<CloudflarePreview />);
+} else {
+  root.render(
+    <trpc.Provider client={trpcClient} queryClient={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>
+    </trpc.Provider>,
+  );
+}

@@ -1,0 +1,3 @@
+name = "arch001-creative-preview"
+pages_build_output_dir = "./dist/public"
+compatibility_date = "2026-08-21"
