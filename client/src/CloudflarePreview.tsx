@@ -22,11 +22,11 @@ export default function CloudflarePreview() {
           <div>
             <p className="text-xs tracking-[.24em] text-[#e9cd7a]">ORIGINAL JEWEL &gt; SYSTEM JEWEL &gt; CITY &gt; EPISODES</p>
             <h1 className="mt-4 font-display text-4xl font-bold leading-tight sm:text-6xl">معاينة عامة مجانية<br /><span className="text-cyan-200">لعالم بشوشا</span></h1>
-            <p className="mt-5 max-w-2xl text-base leading-8 text-[#c5d6dc]">هذه النسخة تعمل كواجهة تعريفية سريعة على Cloudflare Pages من دون تسجيل دخول أو مفاتيح. سجل المدينة وطبقة الفريق ظاهرين، أما إنتاج الشات المحمي فيبقى في غرفة العمليات الكاملة.</p>
+            <p className="mt-5 max-w-2xl text-base leading-8 text-[#c5d6dc]">هذه النسخة تعمل كواجهة تعريفية سريعة على Cloudflare Workers من دون تسجيل دخول أو مفاتيح. سجل المدينة وطبقة الفريق ظاهرين، أما إنتاج الشات المحمي فيبقى في غرفة العمليات الكاملة.</p>
             <div className="mt-7 flex flex-wrap gap-3"><Pill label={`${locked} DNA LOCKED`} /><Pill label={`${archDistricts.length} أحياء`} /><Pill label={ARCH001_SIGNATURE} /></div>
           </div>
           <div className="rounded-[28px] border border-cyan-300/30 bg-gradient-to-br from-[#0b2935] via-[#071923] to-[#111007] p-6 shadow-[0_25px_70px_rgba(0,0,0,.35)]">
-            <Cloud className="size-8 text-cyan-200" /><p className="mt-5 text-[11px] tracking-[.22em] text-cyan-200">FREE PREVIEW LAYER</p><p className="mt-2 font-display text-2xl font-bold">Cloudflare Pages</p><p className="mt-3 text-sm leading-7 text-[#b9cbd0]">واجهة عامة بلا أسرار، قابلة للربط من GitHub. لا تدّعي هذه النسخة أنها تشغل OAuth أو قاعدة البيانات أو محرك الشات الداخلي.</p>
+            <Cloud className="size-8 text-cyan-200" /><p className="mt-5 text-[11px] tracking-[.22em] text-cyan-200">FREE PREVIEW LAYER</p><p className="mt-2 font-display text-2xl font-bold">Cloudflare Worker</p><p className="mt-3 text-sm leading-7 text-[#b9cbd0]">واجهة عامة بلا أسرار، قابلة للربط من GitHub. لا تدّعي هذه النسخة أنها تشغل OAuth أو قاعدة البيانات أو محرك الشات الداخلي.</p>
           </div>
         </div>
       </section>

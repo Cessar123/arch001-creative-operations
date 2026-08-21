@@ -82,6 +82,8 @@ describe("ARCH-001 repository documentation", () => {
     expect(cloudflareGuide).toContain("Workers Builds");
     expect(cloudflareGuide).toContain("does **not** call `/api/trpc`");
     expect(preview).not.toContain("trpc.");
+    expect(preview).toContain("Cloudflare Worker");
+    expect(preview).not.toContain("Cloudflare Pages");
     expect(bootstrap).toContain("VITE_DEPLOYMENT_TARGET === \"cloudflare-pages\"");
     expect(wrangler).toContain('name = "arch001-creative-operations"');
     expect(wrangler).toContain("[assets]");
