@@ -1,224 +1,141 @@
 import { AIChatBox, type Message } from "@/components/AIChatBox";
-import { useAuth } from "@/_core/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
+import { trpc } from "@/lib/trpc";
+import { archCharacters, archDistricts, archSkills, ARCH001_MASTER_MAP_URL, ARCH001_SIGNATURE, getArchRegistryPayload } from "../../../shared/arch001";
 import {
-  ArrowUpLeft,
+  Aperture,
   Bot,
-  Boxes,
-  ChevronLeft,
+  Building2,
   Clapperboard,
-  Clock3,
   Compass,
-  Image as ImageIcon,
-  Layers3,
-  LogOut,
-  Map,
-  MessageCircle,
-  Plus,
+  Cpu,
+  LockKeyhole,
+  MapPinned,
+  MessageCircleMore,
+  QrCode,
+  ShieldCheck,
   Sparkles,
   WandSparkles,
-  Workflow,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
-const stages = [
-  { id: 1, label: "الشخصيات", icon: Sparkles },
-  { id: 2, label: "المركبات", icon: Boxes },
-  { id: 3, label: "المواقع", icon: Map },
-  { id: 4, label: "الحلقة والبرومو", icon: Clapperboard },
+const ep001Prompt = "EP-MATRIX — شغّل الحزمة الافتتاحية «رسالة الصباح التي ضاعت»: الكاست إسلام وسوزان وشمندي وجوري وعيد فقط، عبر D01 وD02 وD03. اكتب 4 مشاهد مع الهوك، واحترم كل DNA LOCK ولا تضف READY أو PENDING بصريًا.";
+
+const prompts = [
+  ep001Prompt,
+  "[001-DIR] ST-CAST-3D — CAST: إسلام، شمندي، جوري — LOCATION: D02 — FUNCTION: مشكلة صباحية كوميدية في بوابة العائلة.",
+  "اعمل بطاقة حلقة من 4 مشاهد عن عيد وعودي في حي العائلة، مع الحفاظ على اختلافهم البصري.",
+  "اعمل شيت Intake لظاظا: ما الذي يحتاجه قبل أن يصبح LOCKED بصريًا؟",
+  "اكتب برومبت فيديو من خمس سطور لبرومو مدينة بشوشا، يشمل سوزان وجوست ومريم.",
 ];
 
-function parseJson(value: string | null | undefined) {
-  if (!value) return null;
-  try {
-    return JSON.parse(value) as Record<string, any>;
-  } catch {
-    return null;
-  }
-}
-
-function messageText(content: string) {
-  const parsed = parseJson(content);
-  if (!parsed?.stages) return content;
-  const characters = parsed.stages.characters?.characters?.slice(0, 3).map((item: any) => `- ${item.name}: ${item.role}`).join("\\n") ?? "- لم تُحدد بعد";
-  const vehicles = parsed.stages.vehicles?.vehicles?.slice(0, 2).map((item: any) => `- ${item.name}: ${item.catchphrase}`).join("\\n") ?? "- لم تُحدد بعد";
-  return `**${parsed.projectTitle}**\\n\\n${parsed.logline}\\n\\n### الشخصيات\\n${characters}\\n\\n### المركبات\\n${vehicles}\\n\\n### الهوك\\n${parsed.promo?.hook ?? "سيظهر بعد اكتمال المرحلة الرابعة."}\\n\\n_التفاصيل الكاملة محفوظة في لوحات المخرجات الجانبية._`;
+function statusClass(status: string) {
+  if (status === "LOCKED") return "border-cyan-300/30 bg-cyan-300/10 text-cyan-100";
+  if (status === "READY") return "border-[#e4bd59]/40 bg-[#e4bd59]/10 text-[#f4d889]";
+  return "border-orange-300/30 bg-orange-300/10 text-orange-100";
 }
 
 export default function Home() {
   const { user, isAuthenticated, logout } = useAuth();
-  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
-  const [activePanel, setActivePanel] = useState("overview");
-  const [newTitle, setNewTitle] = useState("");
-  const [newPremise, setNewPremise] = useState("");
-  const utils = trpc.useUtils();
-
-  const projectsQuery = trpc.projects.list.useQuery(undefined, { enabled: isAuthenticated });
-  const projectInput = useMemo(() => ({ projectId: selectedProjectId ?? 0 }), [selectedProjectId]);
-  const projectQuery = trpc.projects.get.useQuery(projectInput, { enabled: Boolean(selectedProjectId) && isAuthenticated });
-
-  const createProject = trpc.projects.create.useMutation({
-    onError: error => toast.error(error.message || "تعذر إنشاء المشروع، حاول مرة أخرى."),
-    onSuccess: async ({ projectId }) => {
-      setSelectedProjectId(projectId);
-      setNewTitle("");
-      setNewPremise("");
-      await utils.projects.list.invalidate();
-    },
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [selectedSkill, setSelectedSkill] = useState("scene");
+  const chat = trpc.arch001.chat.useMutation({
+    onSuccess: ({ content }) => setMessages((current) => [...current, { role: "assistant", content }]),
+    onError: (error) => toast.error(error.message || "تعذر تشغيل غرفة العمليات الآن."),
   });
 
-  const sendMessage = trpc.chat.send.useMutation({
-    onError: error => toast.error(error.message || "تعذر تشغيل المحرك الإبداعي، حاول مرة أخرى."),
-    onSuccess: async () => {
-      await utils.projects.get.invalidate(projectInput);
-      await utils.projects.list.invalidate();
-    },
-  });
+  const stats = useMemo(() => ({
+    locked: archCharacters.filter((character) => character.status === "LOCKED").length,
+    ready: archCharacters.filter((character) => character.status === "READY").length,
+    pending: archCharacters.filter((character) => character.status === "PENDING").length,
+  }), []);
 
-  const generateAsset = trpc.assets.generateImage.useMutation({
-    onError: error => toast.error(error.message || "تعذر توليد الصورة، تحقق من الوصف وحاول مرة أخرى."),
-    onSuccess: async () => {
-      await utils.projects.get.invalidate(projectInput);
-    },
-  });
-
-  const selectedProject = projectQuery.data?.project;
-  const dbMessages = projectQuery.data?.messages ?? [];
-  const chatMessages: Message[] = dbMessages.map(message => ({
-    role: message.role === "system" ? "system" : message.role,
-    content: messageText(message.content),
-  }));
-  const latestOutput = useMemo(() => {
-    const latest = [...dbMessages].reverse().find(message => message.role === "assistant");
-    return latest ? parseJson(latest.content) : null;
-  }, [dbMessages]);
-
-  const hasProjects = (projectsQuery.data?.length ?? 0) > 0;
-  const isBusy = createProject.isPending || sendMessage.isPending || generateAsset.isPending;
-
-  function createNewProject(event: React.FormEvent) {
-    event.preventDefault();
-    if (!newTitle.trim() || newPremise.trim().length < 10) return;
-    createProject.mutate({ title: newTitle.trim(), premise: newPremise.trim() });
-  }
-
-  function handleSend(content: string) {
-    if (!selectedProjectId) return;
-    sendMessage.mutate({ projectId: selectedProjectId, content });
-  }
-
-  function generateCharacters() {
-    if (!selectedProjectId || !latestOutput?.assetPrompts?.characters) return;
-    generateAsset.mutate({ projectId: selectedProjectId, kind: "characters", prompt: latestOutput.assetPrompts.characters });
-  }
-
-  function generateLocations() {
-    if (!selectedProjectId || !latestOutput?.assetPrompts?.locations) return;
-    generateAsset.mutate({ projectId: selectedProjectId, kind: "locations", prompt: latestOutput.assetPrompts.locations });
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <main className="min-h-screen bg-[#10100f] text-white px-6 py-10 grid place-items-center">
-        <Card className="max-w-xl border-white/10 bg-[#191917] p-10 text-center shadow-2xl">
-          <div className="mx-auto mb-6 grid size-16 place-items-center rounded-2xl bg-[#dcae54] text-[#15130f]"><WandSparkles /></div>
-          <p className="mb-3 text-xs font-bold uppercase tracking-[0.3em] text-[#dcae54]">Universal Creative Architect Pro</p>
-          <h1 className="font-display text-4xl font-semibold leading-tight">ابنِ عالمك الكرتوني من فكرة واحدة</h1>
-          <p className="mt-4 text-[#bdb8ab]">منصة إبداعية تحفظ مشروعاتك وتحوّل الخيال إلى شخصيات ومواقع وحلقات وصور جاهزة للتطوير.</p>
-          <Button className="mt-8 h-12 w-full bg-[#e6b95d] text-[#19150f] hover:bg-[#f1ce7d]" onClick={() => startLogin()}>ابدأ مساحة الإبداع <ArrowUpLeft className="mr-2 size-4" /></Button>
-        </Card>
-      </main>
-    );
+  function send(content: string) {
+    if (!isAuthenticated) {
+      toast.message("سجّل الدخول لتشغيل محرك الإنتاج الذكي.");
+      return;
+    }
+    const next = [...messages, { role: "user" as const, content }];
+    setMessages(next);
+    chat.mutate({
+      messages: next.filter(
+        (message): message is { role: "user" | "assistant"; content: string } =>
+          message.role === "user" || message.role === "assistant",
+      ),
+    });
   }
 
   return (
-    <main dir="rtl" className="min-h-screen bg-[#10100f] text-[#f7f1e4]">
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-[#10100f]/90 backdrop-blur-xl">
-        <div className="mx-auto flex h-20 max-w-[1600px] items-center justify-between px-5 lg:px-8">
-          <div className="flex items-center gap-4">
-            <div className="grid size-11 place-items-center rounded-2xl bg-[#e6b95d] text-[#17140f] shadow-[0_0_30px_rgba(230,185,93,.25)]"><WandSparkles className="size-5" /></div>
-            <div><p className="font-display text-lg font-semibold tracking-wide">المعمل الإبداعي</p><p className="text-[11px] text-[#aaa397]">Universal Creative Architect Pro</p></div>
+    <main dir="rtl" className="min-h-screen overflow-x-hidden bg-[#050b11] text-[#f5edce] selection:bg-cyan-300/30">
+      <div className="pointer-events-none fixed inset-0 opacity-40 [background-image:linear-gradient(rgba(93,232,255,.045)_1px,transparent_1px),linear-gradient(90deg,rgba(93,232,255,.045)_1px,transparent_1px)] [background-size:54px_54px]" />
+      <header className="sticky top-0 z-30 border-b border-[#e4bd59]/25 bg-[#061019]/90 backdrop-blur-xl">
+        <div className="mx-auto flex h-20 max-w-[1700px] items-center justify-between gap-4 px-4 sm:px-7">
+          <div className="flex items-center gap-3">
+            <div className="grid size-11 place-items-center rounded-xl border border-[#e4bd59]/70 bg-[#e4bd59]/10 text-[#e4bd59] shadow-[0_0_28px_rgba(228,189,89,.17)]"><Aperture className="size-5" /></div>
+            <div><p className="font-display text-lg font-bold tracking-wide">ARCH-001</p><p className="text-[10px] tracking-[.24em] text-cyan-200/70">BASHOSHA CITY // OPERATIONS</p></div>
           </div>
-          <div className="hidden items-center gap-3 md:flex"><Badge className="border border-[#e6b95d]/30 bg-[#e6b95d]/10 text-[#e6b95d]">النواة 1/1 نشطة</Badge><span className="text-sm text-[#bdb8ab]">{user?.name ?? "المبدع"}</span><Button variant="ghost" size="icon" className="text-[#aaa397] hover:bg-white/10 hover:text-white" onClick={() => logout()}><LogOut className="size-4" /></Button></div>
+          <div className="hidden items-center gap-3 md:flex"><Badge className="border-cyan-300/35 bg-cyan-300/10 text-cyan-100">DNA LOCK ACTIVE</Badge><Badge className="border-[#e4bd59]/35 bg-[#e4bd59]/10 text-[#e9cd7a]">{ARCH001_SIGNATURE}</Badge></div>
+          {isAuthenticated ? <div className="flex items-center gap-2"><span className="hidden text-sm text-[#e7ddb9] sm:block">{user?.name ?? "قائد المدينة"}</span><Button variant="outline" size="sm" onClick={logout} className="border-white/15 bg-transparent text-[#f5edce] hover:bg-white/10">خروج</Button></div> : <Button onClick={() => startLogin()} className="bg-[#e4bd59] text-[#10202a] hover:bg-[#f4d889]">شغّل غرفة العمليات</Button>}
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-[1600px] gap-5 px-5 py-5 lg:grid-cols-[270px_minmax(0,1fr)] lg:px-8">
-        <aside className="order-2 lg:order-1">
-          <div className="sticky top-25 space-y-4">
-            <Card className="border-white/10 bg-[#181816] p-4">
-              <div className="mb-4 flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#aaa397]">مساحاتي</p><p className="mt-1 text-sm text-[#f7f1e4]">مشاريعك المحفوظة</p></div><Button size="icon" variant="ghost" className="text-[#e6b95d] hover:bg-[#e6b95d]/10" onClick={() => setSelectedProjectId(null)}><Plus className="size-4" /></Button></div>
-              <div className="space-y-2">
-                {projectsQuery.data?.map(project => <button key={project.id} onClick={() => { setSelectedProjectId(project.id); setActivePanel("overview"); }} className={`w-full rounded-xl border p-3 text-right transition ${selectedProjectId === project.id ? "border-[#e6b95d]/60 bg-[#e6b95d]/10" : "border-white/5 bg-white/[.02] hover:border-white/15 hover:bg-white/[.05]"}`}><p className="truncate text-sm font-semibold">{project.title}</p><p className="mt-1 truncate text-xs text-[#aaa397]">{project.premise}</p></button>)}
-                {!hasProjects && <div className="rounded-xl border border-dashed border-white/10 p-4 text-center text-xs leading-6 text-[#aaa397]">لا توجد مشاريع بعد. ابدأ بفكرة صغيرة ودع المعمل يبني عالمها.</div>}
-              </div>
-            </Card>
-            <Card className="border-white/10 bg-[#181816] p-4"><p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-[#aaa397]">منهجية البناء</p><div className="space-y-2">{stages.map(stage => { const Icon = stage.icon; const active = selectedProject && selectedProject.currentStage >= stage.id; return <div key={stage.id} className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm"><span className={`grid size-7 place-items-center rounded-lg ${active ? "bg-[#e6b95d] text-[#19150f]" : "bg-white/5 text-[#77736b]"}`}><Icon className="size-3.5" /></span><span className={active ? "text-[#f7f1e4]" : "text-[#77736b]"}>{stage.label}</span>{active && <span className="mr-auto size-1.5 rounded-full bg-[#e6b95d]" />}</div> })}</div></Card>
+      <section className="relative mx-auto max-w-[1700px] px-4 pb-8 pt-8 sm:px-7 lg:pt-11">
+        <div className="grid gap-7 xl:grid-cols-[1.18fr_.82fr] xl:items-center">
+          <div className="relative overflow-hidden rounded-[30px] border border-cyan-300/35 bg-[#091822] p-2 shadow-[0_30px_80px_rgba(0,0,0,.45)]">
+            <img src={ARCH001_MASTER_MAP_URL} alt="ARCH-001 Master Map" className="aspect-video w-full rounded-[24px] object-cover opacity-95" />
+            <div className="absolute inset-x-7 bottom-7 flex flex-wrap items-end justify-between gap-3 rounded-2xl border border-cyan-300/25 bg-[#041018]/85 p-4 backdrop-blur-md">
+              <div><p className="text-[10px] tracking-[.25em] text-cyan-200">MASTER MAP INJECTION</p><p className="mt-1 font-display text-lg font-bold">مدينة + كاست + QR + جوهرة النظام</p></div>
+              <div className="flex gap-2"><Badge className="border-[#e4bd59]/35 bg-[#e4bd59]/10 text-[#e9cd7a]"><QrCode className="ml-1 size-3" /> 22 QR</Badge><Badge className="border-cyan-300/35 bg-cyan-300/10 text-cyan-100"><MapPinned className="ml-1 size-3" /> 7 أحياء</Badge></div>
+            </div>
           </div>
+          <div className="space-y-5">
+            <Badge className="border-[#e4bd59]/40 bg-[#e4bd59]/10 px-3 py-1 text-[#e9cd7a]">ORIGINAL JEWEL &gt; SYSTEM JEWEL &gt; CITY &gt; EPISODES</Badge>
+            <h1 className="font-display text-4xl font-bold leading-[1.16] sm:text-5xl">غرفة عمليات <span className="text-cyan-200">الإنتاج الإبداعي</span> لعالم بشوشا</h1>
+            <p className="max-w-xl text-base leading-8 text-[#c5d6dc]">خريطة واحدة تحرس استمرارية الشخصيات، وشات ذكي يبني المشاهد والحلقات والبرومو من داخل ARCH-001 من غير ما يعيد اختراع أي وجه أو عيلة.</p>
+            <div className="grid grid-cols-3 gap-3"><Metric value={stats.locked} label="LOCKED" color="cyan" /><Metric value={stats.ready} label="READY" color="gold" /><Metric value={stats.pending} label="PENDING" color="orange" /></div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto grid max-w-[1700px] gap-5 px-4 pb-12 sm:px-7 xl:grid-cols-[240px_minmax(0,1fr)_310px]">
+        <aside className="space-y-3 xl:sticky xl:top-25 xl:self-start">
+          <div className="mb-4 flex items-center gap-2 text-xs tracking-[.2em] text-[#e9cd7a]"><Cpu className="size-4" /> مهارات الإنتاج</div>
+          {archSkills.map((skill) => { const active = selectedSkill === skill.id; return <button key={skill.id} onClick={() => { setSelectedSkill(skill.id); send(`فعّل مهارة ${skill.name} (${skill.code}) واعرض لي أقصر خطوة إنتاجية تالية.`); }} className={`w-full rounded-2xl border p-3 text-right transition ${active ? "border-cyan-300/50 bg-cyan-300/10 shadow-[0_0_20px_rgba(93,232,255,.08)]" : "border-white/10 bg-white/[.025] hover:border-[#e4bd59]/35 hover:bg-[#e4bd59]/5"}`}><p className="text-sm font-bold text-[#f5edce]">{skill.name}</p><p className="mt-1 text-[11px] text-cyan-200/80">{skill.code}</p><p className="mt-2 text-xs leading-5 text-[#9db4bd]">{skill.description}</p></button> })}
+          <Card className="border-[#e4bd59]/25 bg-[#e4bd59]/[.06] p-4"><div className="flex items-center gap-2 text-[#e9cd7a]"><ShieldCheck className="size-4" /><span className="text-sm font-bold">حارس الاستمرارية</span></div><p className="mt-2 text-xs leading-6 text-[#c8d5d7]">الشات يوقف انجراف الوجه أو العمر أو الزي أو الدور قبل إخراج المشهد.</p></Card>
         </aside>
 
-        <section className="order-1 min-w-0 lg:order-2">
-          {!selectedProjectId ? (
-            <div className="grid min-h-[calc(100vh-130px)] place-items-center">
-              <Card className="relative w-full max-w-3xl overflow-hidden border-white/10 bg-[#181816] p-8 shadow-2xl lg:p-12"><div className="absolute -left-16 -top-16 size-56 rounded-full bg-[#e6b95d]/10 blur-3xl" /><div className="relative"><div className="mb-8 flex items-center gap-3"><span className="grid size-12 place-items-center rounded-2xl bg-[#e6b95d]/10 text-[#e6b95d]"><Compass /></span><div><p className="text-xs font-bold uppercase tracking-[0.25em] text-[#e6b95d]">جلسة جديدة</p><p className="text-sm text-[#aaa397]">الفكرة الخام هي نقطة الانطلاق</p></div></div><h1 className="max-w-2xl font-display text-4xl font-semibold leading-[1.2] lg:text-6xl">خلّي فكرتك <span className="text-[#e6b95d]">تتحول لعالم</span></h1><p className="mt-5 max-w-xl text-base leading-8 text-[#bdb8ab]">اكتب فكرة فيلمك أو مسلسلك الكرتوني، وسأبني لك الشخصيات والمركبات والمواقع والحلقة الأولى والبرومو في جلسة واحدة مرتبة.</p><form onSubmit={createNewProject} className="mt-9 space-y-3"><Input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="اسم المشروع، مثال: حراس واحة التروس" className="h-12 border-white/10 bg-[#10100f] text-white placeholder:text-[#6e6b63]" /><Textarea value={newPremise} onChange={e => setNewPremise(e.target.value)} placeholder="صف فكرتك في سطرين على الأقل... من هم الأبطال؟ أين يعيشون؟ وما المشكلة التي ستطلق المغامرة؟" className="min-h-32 resize-none border-white/10 bg-[#10100f] text-white placeholder:text-[#6e6b63]" /><Button disabled={createProject.isPending || !newTitle.trim() || newPremise.trim().length < 10} className="h-12 w-full bg-[#e6b95d] font-semibold text-[#19150f] hover:bg-[#f1ce7d]">{createProject.isPending ? "جاري فتح العالم..." : "افتح مشروعك الإبداعي"}<ChevronLeft className="mr-2 size-4" /></Button></form><div className="mt-8 grid gap-3 text-xs text-[#aaa397] sm:grid-cols-3"><span className="flex items-center gap-2"><Workflow className="size-4 text-[#e6b95d]" /> مراحل متسلسلة</span><span className="flex items-center gap-2"><ImageIcon className="size-4 text-[#e6b95d]" /> صور فعلية</span><span className="flex items-center gap-2"><Clock3 className="size-4 text-[#e6b95d]" /> حفظ تلقائي</span></div></div></Card>
+        <section className="min-w-0">
+          <Card className="mb-5 overflow-hidden border border-[#e4bd59]/35 bg-gradient-to-l from-[#201b0c] via-[#101713] to-[#08202a] p-0 shadow-[0_16px_45px_rgba(0,0,0,.22)]">
+            <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3"><div className="grid size-10 shrink-0 place-items-center rounded-xl border border-[#e4bd59]/35 bg-[#e4bd59]/10 text-[#e9cd7a]"><Clapperboard className="size-5" /></div><div><p className="text-[10px] tracking-[.22em] text-[#e9cd7a]">OPENING EPISODE PACKAGE</p><h2 className="mt-1 font-display text-lg font-bold text-[#f5edce]">EP-001 · رسالة الصباح التي ضاعت</h2><p className="mt-1 max-w-2xl text-xs leading-6 text-[#c8d5d7]">D01 → D02 → D03 · إسلام وسوزان وشمندي وجوري وعيد · أربع مشاهد وهوك مقفل داخل DNA LOCK.</p></div></div>
+              <Button onClick={() => send(ep001Prompt)} disabled={chat.isPending} className="shrink-0 bg-[#e4bd59] text-[#10202a] hover:bg-[#f4d889]">شغّل EP-001 <WandSparkles className="mr-2 size-4" /></Button>
             </div>
-          ) : (
-            <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,.9fr)]">
-              <Card className="overflow-hidden border-white/10 bg-[#181816] p-0 shadow-xl"><div className="border-b border-white/10 bg-gradient-to-l from-[#2a2519] to-[#181816] p-5"><div className="flex items-start justify-between gap-4"><div><div className="mb-2 flex items-center gap-2"><Badge className="border-[#e6b95d]/30 bg-[#e6b95d]/10 text-[#e6b95d]">جلسة إنتاج</Badge><span className="text-xs text-[#aaa397]">المرحلة {selectedProject?.currentStage ?? 1} من 4</span></div><h2 className="font-display text-2xl font-semibold">{selectedProject?.title}</h2><p className="mt-1 line-clamp-2 text-sm text-[#aaa397]">{selectedProject?.premise}</p></div><div className="hidden size-12 place-items-center rounded-2xl bg-[#e6b95d]/10 text-[#e6b95d] sm:grid"><Bot /></div></div></div><AIChatBox messages={chatMessages} onSendMessage={handleSend} isLoading={sendMessage.isPending} height="calc(100vh - 250px)" placeholder="اكتب إضافة أو تعديل أو فكرة جديدة للمشروع..." emptyStateMessage="المعمل جاهز لبناء عالمك" suggestedPrompts={["ابنِ لي عالم كرتوني عن مدينة عائمة فوق السحاب", "أريد أبطالاً أطفالاً يحرسون مكتبة سحرية", "اجعل القصة مصرية مع لمسة خيال علمي"]} /></Card>
-
-              <div className="space-y-5">
-                <Card className="border-white/10 bg-[#181816] p-4"><div className="mb-4 flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#aaa397]">مخرجات المشروع</p><p className="mt-1 text-sm text-[#f7f1e4]">لوحة القيادة الإبداعية</p></div><Layers3 className="size-5 text-[#e6b95d]" /></div><div className="grid grid-cols-2 gap-2">{[{id:"overview",label:"نظرة عامة",icon:Workflow},{id:"characters",label:"الشخصيات",icon:Sparkles},{id:"vehicles",label:"المركبات",icon:Boxes},{id:"locations",label:"المواقع",icon:Map},{id:"episode",label:"الحلقة",icon:Clapperboard}].map(item => { const Icon=item.icon; return <button key={item.id} onClick={() => setActivePanel(item.id)} className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-right text-xs transition ${activePanel===item.id ? "border-[#e6b95d]/50 bg-[#e6b95d]/10 text-[#f7f1e4]" : "border-white/5 text-[#aaa397] hover:bg-white/5"}`}><Icon className="size-3.5" />{item.label}</button> })}</div></Card>
-
-                {activePanel === "overview" && <OverviewPanel output={latestOutput} project={selectedProject} onGenerateCharacters={generateCharacters} onGenerateLocations={generateLocations} busy={generateAsset.isPending} />}
-                {activePanel === "characters" && <CharactersPanel output={latestOutput} imageUrl={selectedProject?.charactersImageUrl} onGenerate={generateCharacters} busy={generateAsset.isPending} />}
-                {activePanel === "vehicles" && <VehiclesPanel output={latestOutput} />}
-                {activePanel === "locations" && <LocationsPanel output={latestOutput} imageUrl={selectedProject?.locationsImageUrl} onGenerate={generateLocations} busy={generateAsset.isPending} />}
-                {activePanel === "episode" && <EpisodePanel output={latestOutput} />}
-              </div>
+          </Card>
+          <Card className="overflow-hidden border border-cyan-300/25 bg-[#07131c]/95 p-0 shadow-[0_25px_80px_rgba(0,0,0,.28)]">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 bg-gradient-to-l from-[#0a2834] to-[#07131c] p-5">
+              <div className="flex items-center gap-3"><div className="grid size-10 place-items-center rounded-xl bg-cyan-300/10 text-cyan-200"><Bot className="size-5" /></div><div><p className="font-display text-lg font-bold">KA LOLITA // Creative Operations</p><p className="text-xs text-[#9db4bd]">ARCH-001 context loaded · DNA LOCK monitoring</p></div></div>
+              <Badge className="border-cyan-300/30 bg-cyan-300/10 text-cyan-100">LIVE PRODUCTION CHAT</Badge>
             </div>
-          )}
+            {isAuthenticated ? <AIChatBox messages={messages} onSendMessage={send} isLoading={chat.isPending} height="680px" className="rounded-none border-0 bg-[#07131c] shadow-none" placeholder="اطلب مشهد أو حلقة أو برومو أو قفل شخصية داخل ARCH-001..." emptyStateMessage="الشبكة محمّلة: اختر بروتوكول إنتاج أو اكتب أمرك الأول." suggestedPrompts={prompts} /> : <div className="grid min-h-[520px] place-items-center p-8 text-center"><div className="max-w-md"><div className="mx-auto grid size-16 place-items-center rounded-2xl border border-[#e4bd59]/40 bg-[#e4bd59]/10 text-[#e9cd7a]"><MessageCircleMore className="size-8" /></div><h2 className="mt-5 font-display text-2xl font-bold">الشات محمل بذاكرة المدينة</h2><p className="mt-3 text-sm leading-7 text-[#adc0c6]">سجّل الدخول لتبدأ جلسة إنتاج محفوظة ويقدر المحرك ينفذ أوامر الحلقة والمشهد والسكن والعمل.</p><Button onClick={() => startLogin()} className="mt-6 bg-[#e4bd59] text-[#10202a] hover:bg-[#f4d889]">ابدأ الشات الذكي <WandSparkles className="mr-2 size-4" /></Button></div></div>}
+          </Card>
         </section>
-      </div>
+
+        <aside className="space-y-4 xl:sticky xl:top-25 xl:self-start">
+          <Card className="border-white/10 bg-[#07131c] p-4"><div className="flex items-center justify-between"><div><p className="text-xs tracking-[.2em] text-[#e9cd7a]">CAST REGISTRY</p><p className="mt-1 font-display text-lg font-bold">الشخصيات الحالية</p></div><Building2 className="size-5 text-cyan-200" /></div><div className="mt-4 max-h-[390px] space-y-2 overflow-y-auto pr-1">{archCharacters.map((character) => { const qrPayload = getArchRegistryPayload(character); return <div key={character.id} className="rounded-xl border border-white/[.07] bg-white/[.025] p-3"><div className="flex items-start justify-between gap-2"><div><p className="text-sm font-bold text-[#f5edce]">{character.name}</p><p className="mt-1 text-[11px] text-cyan-200/75">{character.id}</p></div><Badge className={`border text-[9px] ${statusClass(character.status)}`}>{character.status}</Badge></div><p className="mt-2 text-xs text-[#bdced3]">{character.role} · {character.district}</p><p className="mt-1 text-[10px] text-[#8fa7b0]">⌂ {character.residence} · ▣ {character.work}</p><div title={qrPayload} className="mt-2 flex items-center gap-1.5 rounded-md border border-cyan-300/15 bg-cyan-300/[.045] px-2 py-1 text-[9px] text-cyan-100/80"><QrCode className="size-3 shrink-0" /><span className="truncate" dir="ltr">QR:// {character.id}</span></div></div> })}</div></Card>
+          <Card className="border-white/10 bg-[#07131c] p-4"><div className="flex items-center gap-2 text-[#e9cd7a]"><Compass className="size-4" /><span className="text-sm font-bold">أحياء المدينة</span></div><div className="mt-3 grid gap-2">{archDistricts.map((district) => <div key={district.id} className="flex items-center gap-3 rounded-lg bg-white/[.025] px-3 py-2"><span className="grid size-7 place-items-center rounded-md bg-cyan-300/10 text-cyan-200">{district.icon}</span><div className="min-w-0"><p className="text-xs font-bold">{district.id} · {district.label}</p><p className="truncate text-[10px] text-[#8fa7b0]">{district.name}</p></div></div>)}</div></Card>
+          <Card className="border-[#e4bd59]/25 bg-[#e4bd59]/[.06] p-4"><div className="flex items-center gap-2 text-[#e9cd7a]"><Clapperboard className="size-4" /><span className="text-sm font-bold">أمر سريع</span></div><p className="mt-2 text-xs leading-6 text-[#c8d5d7]">ابدأ بـ <span className="text-cyan-200">EP-MATRIX</span> لتشغيل الحلقة الافتتاحية، أو اكتب <span className="text-cyan-200">[001-DIR] ST-CAST-3D</span> ثم الشخصيات والموقع ووظيفة المشهد.</p></Card>
+        </aside>
+      </section>
     </main>
   );
 }
 
-function OverviewPanel({ output, project, onGenerateCharacters, onGenerateLocations, busy }: { output: any; project: any; onGenerateCharacters: () => void; onGenerateLocations: () => void; busy: boolean }) {
-  if (!output) return <Card className="border-dashed border-white/10 bg-[#181816] p-6 text-center text-sm leading-7 text-[#aaa397]">أرسل أول رسالة للمشروع لتوليد لوحة الشخصيات وخريطة المواقع والسيناريو. كل رد سيُحفظ تلقائياً في سجل المشروع.</Card>;
-  return <div className="space-y-4"><Card className="border-white/10 bg-[#181816] p-5"><p className="text-xs uppercase tracking-[0.2em] text-[#e6b95d]">الفكرة المركزية</p><h3 className="mt-2 font-display text-xl font-semibold">{output.projectTitle}</h3><p className="mt-2 text-sm leading-7 text-[#bdb8ab]">{output.logline}</p><div className="mt-4 rounded-xl bg-white/[.03] p-3 text-sm leading-7 text-[#aaa397]">{output.concept}</div></Card><div className="grid gap-3 sm:grid-cols-2"><AssetCard title="لوحة الشخصيات" imageUrl={project?.charactersImageUrl} onGenerate={onGenerateCharacters} busy={busy} /><AssetCard title="خريطة المواقع" imageUrl={project?.locationsImageUrl} onGenerate={onGenerateLocations} busy={busy} /></div><Card className="border-white/10 bg-[#181816] p-5"><p className="text-sm font-semibold">البرومو والهوك</p><p className="mt-3 rounded-xl bg-[#e6b95d]/10 p-3 text-sm leading-7 text-[#e6b95d]">{output.promo?.hook}</p><p className="mt-3 text-xs leading-6 text-[#aaa397]">{output.promo?.videoPrompt}</p></Card></div>;
-}
-
-function AssetCard({ title, imageUrl, onGenerate, busy }: { title: string; imageUrl?: string | null; onGenerate: () => void; busy: boolean }) {
-  return <Card className="overflow-hidden border-white/10 bg-[#181816] p-0"><div className="aspect-[4/3] bg-[#10100f]">{imageUrl ? <img src={imageUrl} alt={title} className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center text-center text-xs text-[#77736b]"><ImageIcon className="mb-2 size-6 text-[#e6b95d]/60" /><span>الصورة لم تُولّد بعد</span></div>}</div><div className="flex items-center justify-between gap-2 p-3"><span className="text-sm font-semibold">{title}</span><Button size="sm" variant="outline" onClick={onGenerate} disabled={busy} className="border-[#e6b95d]/30 bg-transparent text-[#e6b95d] hover:bg-[#e6b95d]/10">{busy ? "جاري التوليد" : imageUrl ? "إعادة التوليد" : "ولّد صورة"}</Button></div></Card>;
-}
-
-function CharactersPanel({ output, imageUrl, onGenerate, busy }: { output: any; imageUrl?: string | null; onGenerate: () => void; busy: boolean }) {
-  const characters = output?.stages?.characters?.characters ?? [];
-  return <OutputPanel title="لوحة الشخصيات" imageUrl={imageUrl} onGenerate={onGenerate} busy={busy} empty={!output}><div className="space-y-3">{characters.map((character: any) => <div key={character.name} className="rounded-xl border border-white/5 bg-white/[.03] p-4"><div className="flex items-center justify-between"><h4 className="font-semibold">{character.name}</h4><Badge variant="outline" className="border-white/10 text-[#aaa397]">{character.role}</Badge></div><p className="mt-2 text-sm leading-6 text-[#bdb8ab]">{character.visualIdentity}</p><p className="mt-2 text-xs leading-6 text-[#aaa397]">{character.personality} · {character.voiceSignature}</p></div>)}</div></OutputPanel>;
-}
-
-function LocationsPanel({ output, imageUrl, onGenerate, busy }: { output: any; imageUrl?: string | null; onGenerate: () => void; busy: boolean }) {
-  const locations = output?.stages?.locations?.locations ?? [];
-  return <OutputPanel title="خريطة المواقع" imageUrl={imageUrl} onGenerate={onGenerate} busy={busy} empty={!output}><div className="space-y-3">{locations.map((location: any) => <div key={location.name} className="rounded-xl border border-white/5 bg-white/[.03] p-4"><h4 className="font-semibold">{location.name}</h4><p className="mt-2 text-sm text-[#bdb8ab]">{location.purpose}</p><p className="mt-2 text-xs leading-6 text-[#aaa397]">{location.visualDetails}</p></div>)}</div></OutputPanel>;
-}
-
-function OutputPanel({ title, imageUrl, onGenerate, busy, empty, children }: { title: string; imageUrl?: string | null; onGenerate: () => void; busy: boolean; empty: boolean; children: React.ReactNode }) {
-  return <Card className="border-white/10 bg-[#181816] p-5"><div className="mb-4 flex items-center justify-between gap-3"><h3 className="font-display text-xl font-semibold">{title}</h3>{!empty && <Button size="sm" variant="outline" onClick={onGenerate} disabled={busy} className="border-[#e6b95d]/30 bg-transparent text-[#e6b95d]">{busy ? "جاري التوليد" : imageUrl ? "تحديث الصورة" : "توليد الصورة"}</Button>}</div>{imageUrl && <img src={imageUrl} alt={title} className="mb-4 aspect-video w-full rounded-xl object-cover" />}{empty ? <p className="text-sm leading-7 text-[#aaa397]">ستظهر المخرجات هنا بعد إرسال فكرة المشروع.</p> : children}</Card>;
-}
-
-function VehiclesPanel({ output }: { output: any }) {
-  const vehicles = output?.stages?.vehicles?.vehicles ?? [];
-  return <Card className="border-white/10 bg-[#181816] p-5"><h3 className="font-display text-xl font-semibold">المركبات والأصول</h3><div className="mt-4 space-y-3">{vehicles.length ? vehicles.map((vehicle: any) => <div key={vehicle.name} className="rounded-xl border border-white/5 bg-white/[.03] p-4"><div className="flex items-center justify-between"><h4 className="font-semibold">{vehicle.name}</h4><span className="text-xs text-[#e6b95d]">{vehicle.owner}</span></div><p className="mt-2 text-sm leading-6 text-[#bdb8ab]">{vehicle.visualIdentity}</p><p className="mt-2 text-xs leading-6 text-[#aaa397]">الزمور: {vehicle.hornSound} · الجملة: {vehicle.catchphrase}</p></div>) : <p className="text-sm text-[#aaa397]">أرسل فكرة لتظهر المركبات.</p>}</div></Card>;
-}
-
-function EpisodePanel({ output }: { output: any }) {
-  const episode = output?.stages?.episode;
-  return <Card className="border-white/10 bg-[#181816] p-5"><h3 className="font-display text-xl font-semibold">{episode?.title ?? "سيناريو الحلقة الأولى"}</h3>{episode ? <><p className="mt-2 text-sm leading-7 text-[#bdb8ab]">{episode.logline}</p><div className="mt-5 space-y-4">{episode.scenes?.map((scene: any) => <div key={scene.heading} className="border-r-2 border-[#e6b95d]/50 pr-4"><p className="text-xs font-bold uppercase tracking-[0.15em] text-[#e6b95d]">{scene.heading}</p><p className="mt-2 text-sm leading-7 text-[#bdb8ab]">{scene.action}</p><p className="mt-2 text-sm leading-7 text-[#f7f1e4]">{scene.dialogue}</p></div>)}</div><div className="mt-5 rounded-xl bg-[#e6b95d]/10 p-4 text-sm leading-7 text-[#e6b95d]">{episode.endingHook}</div></> : <p className="mt-3 text-sm leading-7 text-[#aaa397]">أرسل فكرة لتظهر الحلقة الأولى.</p>}</Card>;
+function Metric({ value, label, color }: { value: number; label: string; color: "cyan" | "gold" | "orange" }) {
+  const palette = { cyan: "border-cyan-300/25 bg-cyan-300/10 text-cyan-100", gold: "border-[#e4bd59]/25 bg-[#e4bd59]/10 text-[#f4d889]", orange: "border-orange-300/25 bg-orange-300/10 text-orange-100" }[color];
+  return <div className={`rounded-2xl border p-3 ${palette}`}><p className="font-display text-2xl font-bold">{value}</p><p className="mt-1 text-[10px] tracking-[.18em] opacity-80">{label}</p></div>;
 }

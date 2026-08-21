@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Playfair+Display:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -74,13 +74,14 @@
 
 @layer base {
   * { @apply border-border; }
-  html { background: #10100f; }
-  body { @apply bg-background text-foreground; font-family: "Cairo", sans-serif; margin: 0; }
+html { background: #050b11; }
+body { @apply bg-background text-foreground; font-family: "Cairo", sans-serif; margin: 0; }
   button, input, textarea { font-family: inherit; }
   ::selection { background: rgba(230, 185, 93, .35); color: #fff; }
 }
 
 .font-display { font-family: "Cairo", sans-serif; letter-spacing: -0.02em; }
+.font-mono-arch { font-family: "DM Mono", monospace; }
 
 @media (prefers-reduced-motion: no-preference) {
   button, a, input, textarea { transition: background-color 180ms ease-out, border-color 180ms ease-out, color 180ms ease-out, transform 180ms ease-out, opacity 180ms ease-out; }
