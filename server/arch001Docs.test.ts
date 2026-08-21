@@ -43,4 +43,17 @@ describe("ARCH-001 repository documentation", () => {
     expect(homePage).toContain("شغّل EP-001");
     expect(homePage).toContain("onClick={() => send(ep001Prompt)}");
   });
+
+  it("keeps the Render deployment plan free of Manus secrets", () => {
+    const readme = projectFile("README.md");
+    const renderPlan = projectFile("RENDER_DEPLOYMENT.md");
+    const renderBlueprint = projectFile("render.yaml");
+
+    expect(readme).toContain("RENDER_DEPLOYMENT.md");
+    expect(renderPlan).toContain("Render Free");
+    expect(renderPlan).toContain("BUILT_IN_FORGE_API_*");
+    expect(renderPlan).toContain("No secret belongs");
+    expect(renderBlueprint).toContain("plan: free");
+    expect(renderBlueprint).not.toContain("BUILT_IN_FORGE_API_KEY:");
+  });
 });

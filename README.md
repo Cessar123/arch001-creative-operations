@@ -85,6 +85,7 @@ pnpm dev
 | [ARCH001_REFERENCE.md](ARCH001_REFERENCE.md) | مرجع سريع لمطورين وشاتات جديدة، مع بروتوكول منع الانجراف. |
 | [ARCH001_PRODUCTION_PLAYBOOK.md](ARCH001_PRODUCTION_PLAYBOOK.md) | بوابات الإنتاج، قوالب الكروت، وحزمة الحلقة الافتتاحية الجاهزة. |
 | [GITHUB_EXPORT.md](GITHUB_EXPORT.md) | ملاحظات تصدير الكود والاستضافة خارج Manus. |
+| [RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md) | خطة نشر Render الآمنة وحدود نقل الشات وتسجيل الدخول وقاعدة البيانات خارج Manus. |
 | [arch001_web_visual_verification.md](arch001_web_visual_verification.md) | نتيجة التحقق اليدوي من واجهة غرفة العمليات. |
 
 ## المساهمة الآمنة
