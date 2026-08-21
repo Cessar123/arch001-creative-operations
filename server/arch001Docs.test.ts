@@ -32,4 +32,12 @@ describe("ARCH-001 repository documentation", () => {
     expect(playbook).toContain("EP-001 — «رسالة الصباح التي ضاعت»");
     expect(playbook).toContain("لا تظهر شخصيات `READY` أو `PENDING`");
   });
+
+  it("surfaces the locked opening episode as a chat suggestion", () => {
+    const homePage = projectFile("client/src/pages/Home.tsx");
+
+    expect(homePage).toContain("EP-MATRIX");
+    expect(homePage).toContain("رسالة الصباح التي ضاعت");
+    expect(homePage).toContain("ولا تضف READY أو PENDING بصريًا");
+  });
 });
