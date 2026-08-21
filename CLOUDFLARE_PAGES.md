@@ -1,10 +1,10 @@
-# Cloudflare Pages Public Preview
+# Cloudflare Public Preview
 
-This repository now includes a **no-card public preview** build that is intentionally separate from the complete Manus application. It exists to expose ARCH-001’s world, team layer, districts, and production boundaries without publishing OAuth credentials, database access, storage credentials, or LLM keys.
+This repository contains a **no-card public preview** that is intentionally separate from the complete Manus application. It exposes the ARCH-001 world, team layer, districts, and production boundaries without publishing OAuth credentials, database access, storage credentials, or LLM keys.
 
-## What this deployment contains
+## Public deployment boundary
 
-| Available in Cloudflare Pages | Kept on the Manus application |
+| Available in the Cloudflare preview | Kept in the Manus application |
 | --- | --- |
 | ARCH-001 overview, districts, DNA LOCK counts, and the team-layer protocol | Manus OAuth login and session management |
 | Public team roles for Islam, Mustafa, Manus, and the continuity guard | Authenticated tRPC mutations and project data |
@@ -12,19 +12,19 @@ This repository now includes a **no-card public preview** build that is intentio
 
 > The Cloudflare build does **not** call `/api/trpc` and does **not** start the Manus login flow. It is a transparent public preview, not a fake copy of the production chat.
 
-## Git-based deployment
+## Git deployment through Cloudflare Workers Builds
 
-Create a Cloudflare Pages project from `Cessar123/arch001-creative-operations` and use the following configuration.
+The current Cloudflare dashboard project is a **Workers Builds** project. This is why its deploy step runs `npx wrangler deploy` rather than the Cloudflare Pages uploader. The repository now supports that route as an assets-only Worker, which serves the Vite output from `dist/public`.
 
-| Field | Value |
+| Dashboard field | Required value |
 | --- | --- |
 | Production branch | `main` |
 | Build command | `pnpm run build:cloudflare` |
-| Build output directory | `dist/public` |
+| Deploy command | `npx wrangler deploy` |
 | Root directory | Leave empty |
 | Environment variables | None required |
 
-The committed [`wrangler.toml`](wrangler.toml) sets `pages_build_output_dir = "./dist/public"` as the project configuration. Cloudflare Pages treats the Wrangler configuration as a source of truth once it is deployed, so do not add secrets to it.[[1]]
+Cloudflare Workers Builds injects `WORKERS_CI=1` into its build environment. The repository's default `pnpm run build` detects that value and automatically delegates to `pnpm run build:cloudflare`, so the current dashboard setting shown in the failed build is also safe after this change. The committed [`wrangler.toml`](wrangler.toml) sets the Worker name and configures the static-asset directory as `./dist/public`. It also enables single-page-application fallback for any future client-side paths. Do not add secrets to this file.
 
 ## Local verification
 
@@ -32,14 +32,14 @@ The committed [`wrangler.toml`](wrangler.toml) sets `pages_build_output_dir = ".
 pnpm run build:cloudflare
 ```
 
-The generated static site is in `dist/public`. This command intentionally builds only the Vite client; the Express bundle is omitted. Cloudflare’s Pages build configuration supports a custom build command and output directory, while a standard Vite project normally outputs to `dist`; this project explicitly uses `dist/public`.[[2]]
+The generated static site is in `dist/public`. The command builds only the Vite client; the Express bundle is omitted. `wrangler deploy` then uploads these static assets as part of the Cloudflare Worker deployment.
 
 ## Next migration boundary
 
-To move the full authenticated product off Manus, replace each internal service before connecting it to the public preview: OAuth, database, LLM proxy, and S3 storage. The recommended next backend target is Cloudflare Workers plus an external auth/database/AI provider, not a direct copy of the Express process.
+To move the full authenticated product off Manus, replace each internal service before connecting it to the public preview: OAuth, database, LLM proxy, and S3 storage. The recommended backend target is Cloudflare Workers plus an external auth/database/AI provider, not a direct copy of the Express process.
 
 ## References
 
-[1] [Cloudflare Pages Wrangler configuration](https://developers.cloudflare.com/pages/functions/wrangler-configuration/)
+[1] [Cloudflare Workers static assets](https://developers.cloudflare.com/workers/static-assets/)
 
-[2] [Cloudflare Pages build configuration](https://developers.cloudflare.com/pages/configuration/build-configuration/)
+[2] [Cloudflare Workers Builds configuration](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/)

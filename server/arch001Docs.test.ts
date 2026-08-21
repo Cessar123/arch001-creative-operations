@@ -75,11 +75,19 @@ describe("ARCH-001 repository documentation", () => {
     const preview = projectFile("client/src/CloudflarePreview.tsx");
     const bootstrap = projectFile("client/src/main.tsx");
     const wrangler = projectFile("wrangler.toml");
+    const packageManifest = projectFile("package.json");
 
     expect(cloudflareGuide).toContain("pnpm run build:cloudflare");
+    expect(cloudflareGuide).toContain("npx wrangler deploy");
+    expect(cloudflareGuide).toContain("Workers Builds");
     expect(cloudflareGuide).toContain("does **not** call `/api/trpc`");
     expect(preview).not.toContain("trpc.");
     expect(bootstrap).toContain("VITE_DEPLOYMENT_TARGET === \"cloudflare-pages\"");
-    expect(wrangler).toContain('pages_build_output_dir = "./dist/public"');
+    expect(wrangler).toContain('name = "arch001-creative-operations"');
+    expect(wrangler).toContain("[assets]");
+    expect(wrangler).toContain('directory = "./dist/public"');
+    expect(wrangler).toContain('not_found_handling = "single-page-application"');
+    expect(packageManifest).toContain("WORKERS_CI");
+    expect(packageManifest).toContain("pnpm run build:cloudflare");
   });
 });

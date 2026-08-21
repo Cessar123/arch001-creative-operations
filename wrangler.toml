@@ -1,3 +1,6 @@
-name = "arch001-creative-preview"
-pages_build_output_dir = "./dist/public"
+name = "arch001-creative-operations"
 compatibility_date = "2026-08-21"
+
+[assets]
+directory = "./dist/public"
+not_found_handling = "single-page-application"
