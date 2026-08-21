@@ -24,8 +24,10 @@ import {
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
+const ep001Prompt = "EP-MATRIX — شغّل الحزمة الافتتاحية «رسالة الصباح التي ضاعت»: الكاست إسلام وسوزان وشمندي وجوري وعيد فقط، عبر D01 وD02 وD03. اكتب 4 مشاهد مع الهوك، واحترم كل DNA LOCK ولا تضف READY أو PENDING بصريًا.";
+
 const prompts = [
-  "EP-MATRIX — شغّل الحزمة الافتتاحية «رسالة الصباح التي ضاعت»: الكاست إسلام وسوزان وشمندي وجوري وعيد فقط، عبر D01 وD02 وD03. اكتب 4 مشاهد مع الهوك، واحترم كل DNA LOCK ولا تضف READY أو PENDING بصريًا.",
+  ep001Prompt,
   "[001-DIR] ST-CAST-3D — CAST: إسلام، شمندي، جوري — LOCATION: D02 — FUNCTION: مشكلة صباحية كوميدية في بوابة العائلة.",
   "اعمل بطاقة حلقة من 4 مشاهد عن عيد وعودي في حي العائلة، مع الحفاظ على اختلافهم البصري.",
   "اعمل شيت Intake لظاظا: ما الذي يحتاجه قبل أن يصبح LOCKED بصريًا؟",
@@ -108,6 +110,12 @@ export default function Home() {
         </aside>
 
         <section className="min-w-0">
+          <Card className="mb-5 overflow-hidden border border-[#e4bd59]/35 bg-gradient-to-l from-[#201b0c] via-[#101713] to-[#08202a] p-0 shadow-[0_16px_45px_rgba(0,0,0,.22)]">
+            <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3"><div className="grid size-10 shrink-0 place-items-center rounded-xl border border-[#e4bd59]/35 bg-[#e4bd59]/10 text-[#e9cd7a]"><Clapperboard className="size-5" /></div><div><p className="text-[10px] tracking-[.22em] text-[#e9cd7a]">OPENING EPISODE PACKAGE</p><h2 className="mt-1 font-display text-lg font-bold text-[#f5edce]">EP-001 · رسالة الصباح التي ضاعت</h2><p className="mt-1 max-w-2xl text-xs leading-6 text-[#c8d5d7]">D01 → D02 → D03 · إسلام وسوزان وشمندي وجوري وعيد · أربع مشاهد وهوك مقفل داخل DNA LOCK.</p></div></div>
+              <Button onClick={() => send(ep001Prompt)} disabled={chat.isPending} className="shrink-0 bg-[#e4bd59] text-[#10202a] hover:bg-[#f4d889]">شغّل EP-001 <WandSparkles className="mr-2 size-4" /></Button>
+            </div>
+          </Card>
           <Card className="overflow-hidden border border-cyan-300/25 bg-[#07131c]/95 p-0 shadow-[0_25px_80px_rgba(0,0,0,.28)]">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 bg-gradient-to-l from-[#0a2834] to-[#07131c] p-5">
               <div className="flex items-center gap-3"><div className="grid size-10 place-items-center rounded-xl bg-cyan-300/10 text-cyan-200"><Bot className="size-5" /></div><div><p className="font-display text-lg font-bold">KA LOLITA // Creative Operations</p><p className="text-xs text-[#9db4bd]">ARCH-001 context loaded · DNA LOCK monitoring</p></div></div>

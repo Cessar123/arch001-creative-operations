@@ -39,5 +39,8 @@ describe("ARCH-001 repository documentation", () => {
     expect(homePage).toContain("EP-MATRIX");
     expect(homePage).toContain("رسالة الصباح التي ضاعت");
     expect(homePage).toContain("ولا تضف READY أو PENDING بصريًا");
+    expect(homePage).toContain("OPENING EPISODE PACKAGE");
+    expect(homePage).toContain("شغّل EP-001");
+    expect(homePage).toContain("onClick={() => send(ep001Prompt)}");
   });
 });
