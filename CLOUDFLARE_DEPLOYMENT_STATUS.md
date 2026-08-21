@@ -15,3 +15,5 @@ Cloudflare assigned the production Worker URL:
 `https://arch001-creative-operations.saedseleem5.workers.dev`
 
 The public URL was opened successfully on 21 August 2026. It renders the ARCH-001 preview, shows the seven districts and sixteen DNA-locked characters, and provides only the link to the full Manus operations room. No login wall appeared and the public layer exposed no protected chat, database, OAuth, or tRPC interface.
+
+The subsequent commit `733b629` updated the public copy to identify the hosting layer correctly as **Cloudflare Worker**. The production URL was reopened after that build; both the card heading and the introductory text displayed the new Worker wording.

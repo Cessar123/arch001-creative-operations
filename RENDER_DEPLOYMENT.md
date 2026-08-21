@@ -30,6 +30,10 @@ The current server reads platform-managed Manus values from `server/_core/env.ts
 5. Add no Manus credentials. For a shell preview, keep optional external integration values unset; for a feature-complete deployment, finish the migration table above first.
 6. Deploy and test the generated `onrender.com` URL. The first request after idle can be slow because the free service wakes on demand.[[2]]
 
+## Dashboard configuration recorded
+
+On 21 August 2026, the Render dashboard recognized `Cessar123/arch001-creative-operations` as a **Node** repository on branch `main`, prefilled the build command `pnpm install --frozen-lockfile; pnpm run build` and start command `pnpm run start`, and exposed the **Free** instance choice (`$0/month`, `512 MB RAM`, `0.1 CPU`). The Environment Variables area was left empty intentionally: no Manus values were entered, and deployment still awaits the final user-approved action.
+
 ## Environment handoff
 
 Use [`.env.render.example`](.env.render.example) only as a checklist. Render provides the runtime `PORT`; the server already reads it from the environment. Set `NODE_ENV=production` in Render. Create a fresh `JWT_SECRET` in Render rather than reusing a development or Manus value.
