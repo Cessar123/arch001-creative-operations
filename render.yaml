@@ -1,0 +1,29 @@
+# Render Blueprint for a review/staging deployment of ARCH-001.
+# Values marked sync: false must be added in Render's Environment dashboard.
+services:
+  - type: web
+    name: arch001-creative-operations
+    runtime: node
+    plan: free
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm build
+    startCommand: pnpm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: APP_BASE_URL
+        sync: false
+      - key: LLM_API_KEY
+        sync: false
+      - key: LLM_MODEL
+        sync: false
+      - key: AUTH_PROVIDER
+        sync: false
+      - key: AUTH_CLIENT_ID
+        sync: false
+      - key: AUTH_CLIENT_SECRET
+        sync: false
