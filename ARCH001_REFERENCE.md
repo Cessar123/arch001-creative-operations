@@ -95,6 +95,7 @@ pnpm build
 | المرجع | الغرض |
 | --- | --- |
 | [`README.md`](README.md) | البدء السريع وبنية المستودع. |
+| [`ARCH001_PRODUCTION_PLAYBOOK.md`](ARCH001_PRODUCTION_PLAYBOOK.md) | القوالب القياسية وحزمة الحلقة الافتتاحية للمخرج والشات. |
 | [`shared/arch001.ts`](shared/arch001.ts) | السجل القانوني للشخصيات والأحياء والحالات. |
 | [`server/arch001Engine.ts`](server/arch001Engine.ts) | قواعد الشات وحارس منع الانجراف. |
 | [`GITHUB_EXPORT.md`](GITHUB_EXPORT.md) | التصدير والاستضافة الخارجية. |

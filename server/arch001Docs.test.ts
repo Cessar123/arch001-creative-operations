@@ -23,4 +23,13 @@ describe("ARCH-001 repository documentation", () => {
     expect(reference).toContain("shared/arch001.ts");
     expect(reference).toContain("لا تدمج وجوه الأقارب");
   });
+
+  it("keeps a production playbook with a locked opening episode", () => {
+    const playbook = projectFile("ARCH001_PRODUCTION_PLAYBOOK.md");
+
+    expect(playbook).toContain("Original Jewel → System Jewel → City → Cards → Episodes");
+    expect(playbook).toContain("[001-DIR] ST-CAST-3D");
+    expect(playbook).toContain("EP-001 — «رسالة الصباح التي ضاعت»");
+    expect(playbook).toContain("لا تظهر شخصيات `READY` أو `PENDING`");
+  });
 });
